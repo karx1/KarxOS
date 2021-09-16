@@ -9,6 +9,7 @@
 
 mod vga_buffer;
 mod interrupts;
+mod gdt;
 use core::panic::PanicInfo;
 
 
@@ -19,6 +20,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 fn init() {
+    gdt::init_gdt();
     interrupts::init_idt();
 }
 
@@ -30,9 +32,11 @@ pub extern "C" fn _start() {
 
     x86_64::instructions::interrupts::int3();
 
-    unsafe {
-        *(0xdeadbeef as *mut u64) = 42;
+    fn stack_overflow() {
+        stack_overflow();
     }
+
+    stack_overflow();
 
     #[cfg(test)]
     test_main();
