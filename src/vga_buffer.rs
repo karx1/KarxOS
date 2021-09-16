@@ -43,7 +43,7 @@ struct ScreenChar {
     color_code: ColorCode
 }
 
-const BUFFER_HEIGHT: usize = 25;
+pub(crate) const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
@@ -52,7 +52,7 @@ struct Buffer {
 }
 
 pub struct Writer {
-    column_position: usize,
+    pub column_position: usize,
     color_code: ColorCode,
     buffer: &'static mut Buffer
 }
@@ -168,7 +168,6 @@ pub fn backspace() {
 pub struct Cursor {
     port_low: Port<u8>,
     port_high: Port<u8>,
-    cursor_pos: u16
 }
 
 impl Cursor {
@@ -176,7 +175,6 @@ impl Cursor {
         Cursor {
             port_low: Port::new(0x3D4),
             port_high: Port::new(0x3D5),
-            cursor_pos: 0
         }
     }
 

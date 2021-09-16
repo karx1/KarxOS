@@ -44,7 +44,7 @@ extern "x86-interrupt" fn timer_interrupt_handler(_stack_frame: InterruptStackFr
 
 extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStackFrame) {
     use x86_64::instructions::port::Port;
-    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+    use pc_keyboard::{layouts, DecodedKey, KeyCode, HandleControl, Keyboard, ScancodeSet1};
 
     lazy_static! {
         static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = {
@@ -65,8 +65,36 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                     } else {
                         print!("{}", character)
                     }
+
+                    let writer = crate::vga_buffer::WRITER.lock();
+                    let col = writer.column_position;
+                    let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
+
+                    crate::vga_buffer::move_cursor(col as u16, row as u16);
                 },
-                DecodedKey::RawKey(key) => print!("{:#?}", key), }
+                DecodedKey::RawKey(key) => {
+                    match key {
+                        // TODO
+                        KeyCode::ArrowLeft => {
+                            let mut writer = crate::vga_buffer::WRITER.lock();
+                            let col = writer.column_position;
+                            let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
+
+                            crate::vga_buffer::move_cursor((col as u16) - 1, row as u16);
+                            writer.column_position -= 1;
+                        },
+                        KeyCode::ArrowRight => {
+                            let mut writer = crate::vga_buffer::WRITER.lock();
+                            let col = writer.column_position;
+                            let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
+
+                            crate::vga_buffer::move_cursor((col as u16) + 1, row as u16);
+                            writer.column_position += 1;
+                        },
+                        _ => {}                        
+                    }
+                }, 
+            }
         }
     }
 
