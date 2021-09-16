@@ -62,6 +62,8 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                 DecodedKey::Unicode(character) => {
                     if character == '\u{8}' {
                         crate::vga_buffer::backspace();
+                    } else if character == '\u{9}' {
+                        print!("    ");
                     } else {
                         print!("{}", character)
                     }
@@ -79,9 +81,11 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                             let mut writer = crate::vga_buffer::WRITER.lock();
                             let col = writer.column_position;
                             let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
-
-                            crate::vga_buffer::move_cursor((col as u16) - 1, row as u16);
-                            writer.column_position -= 1;
+                            
+                            if col != 0 {
+                                crate::vga_buffer::move_cursor((col as u16) - 1, row as u16);
+                                writer.column_position -= 1;
+                            }
                         },
                         KeyCode::ArrowRight => {
                             let mut writer = crate::vga_buffer::WRITER.lock();

@@ -157,11 +157,13 @@ pub fn backspace() {
     let row = BUFFER_HEIGHT - 1;
     let col = writer.column_position;
     let color_code = writer.color_code;
-    writer.buffer.chars[row][col - 1].write(ScreenChar {
-        ascii_character: b' ',
-        color_code
-    });
-    writer.column_position -= 1;
+    if col != 0 {
+        writer.buffer.chars[row][col - 1].write(ScreenChar {
+            ascii_character: b' ',
+            color_code
+        });
+        writer.column_position -= 1;
+    }
 }
 
 
