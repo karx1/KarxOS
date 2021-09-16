@@ -6,17 +6,16 @@ use core::panic::PanicInfo;
 
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }
 
 #[no_mangle]
 pub extern "C" fn _start() {
-    println!("Hello there{}", "!");
+    println!("The senate will decide your fate");
     println!();
-    println!("General Kenobi!");
-    println!();
-    println!("You are a bold one");
+    panic!("I am the senate");
 
 
     loop {}
