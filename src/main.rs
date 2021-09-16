@@ -11,10 +11,13 @@ fn panic(_info: &PanicInfo) -> ! {
 }
 
 #[no_mangle]
-pub extern "C" fn _start() -> ! {
-    use core::fmt::Write;
-    vga_buffer::WRITER.lock().write_str("Hello there\n").unwrap();
-    writeln!(vga_buffer::WRITER.lock(), "General Kenobi").unwrap();
+pub extern "C" fn _start() {
+    println!("Hello there{}", "!");
+    println!();
+    println!("General Kenobi!");
+    println!();
+    println!("You are a bold one");
+
 
     loop {}
 }
