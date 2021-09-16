@@ -21,7 +21,7 @@ fn panic(info: &PanicInfo) -> ! {
 
 fn init() {
     gdt::init_gdt();
-    interrupts::init_idt();
+    interrupts::init();
 }
 
 #[no_mangle]
@@ -32,17 +32,13 @@ pub extern "C" fn _start() {
 
     x86_64::instructions::interrupts::int3();
 
-    fn stack_overflow() {
-        stack_overflow();
-    }
-
-    stack_overflow();
-
     #[cfg(test)]
     test_main();
 
     println!("It did not crash!");
-    loop {}
+    loop {
+        x86_64::instructions::hlt();
+    }
 }
 
 #[cfg(test)]
