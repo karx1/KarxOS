@@ -59,9 +59,14 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
-                DecodedKey::Unicode(character) => print!("{}", character),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
-            }
+                DecodedKey::Unicode(character) => {
+                    if character == '\u{8}' {
+                        crate::vga_buffer::backspace();
+                    } else {
+                        print!("{}", character)
+                    }
+                },
+                DecodedKey::RawKey(key) => print!("{:#?}", key), }
         }
     }
 
