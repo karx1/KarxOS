@@ -2,6 +2,7 @@ use volatile::Volatile;
 use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use x86_64::instructions::port::Port;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -128,6 +129,7 @@ lazy_static! {
     });
 }
 
+
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
@@ -160,4 +162,40 @@ pub fn backspace() {
         color_code
     });
     writer.column_position -= 1;
+}
+
+
+pub struct Cursor {
+    port_low: Port<u8>,
+    port_high: Port<u8>,
+    cursor_pos: u16
+}
+
+impl Cursor {
+    pub fn new() -> Cursor {
+        Cursor {
+            port_low: Port::new(0x3D4),
+            port_high: Port::new(0x3D5),
+            cursor_pos: 0
+        }
+    }
+
+    fn move_cursor(&mut self, pos: u16) {
+        unsafe {
+            self.port_low.write(0x0F);
+            self.port_high.write((pos & 0xFF) as u8);
+            self.port_low.write(0x0E);
+            self.port_high.write(((pos >> 8) & 0xFF) as u8);
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref CURSOR: Mutex<Cursor> = Mutex::new(Cursor::new());
+}
+
+pub fn move_cursor(x: u16, y: u16) {
+    let pos: u16 = y * (BUFFER_WIDTH as u16) + x;
+    let mut cursor = CURSOR.lock();
+    cursor.move_cursor(pos);
 }
