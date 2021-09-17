@@ -1,4 +1,5 @@
 use crate::println;
+use crate::print;
 
 pub fn evaluate(command: &str) {
     let res = command.trim();
@@ -6,5 +7,6 @@ pub fn evaluate(command: &str) {
         println!();
         println!();
         println!("[ {:#?} ]", res);
+        print!(">>> ");
     }
 }

@@ -43,6 +43,9 @@ pub extern "C" fn _start() {
     println!("KarxOS!");
     change_color(Color::White, Color::Black);
 
+    // First prompt, future prompts will be handled by shell::evaluate
+    print!(">>> ");
+
     #[cfg(test)]
     test_main();
 
