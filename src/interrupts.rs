@@ -6,6 +6,7 @@ use crate::gdt;
 use pic8259::ChainedPics;
 use spin::Mutex;
 
+
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
@@ -64,6 +65,19 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                         crate::vga_buffer::backspace();
                     } else if character == '\u{9}' {
                         print!("    ");
+                    } else if character == '\n' {
+                        use arrayvec::ArrayString;
+                        let writer = crate::vga_buffer::WRITER.lock();
+                        
+                        let mut builder = ArrayString::<80>::new();
+                        for character in &writer.buffer.chars[crate::vga_buffer::BUFFER_HEIGHT - 1] {
+                            builder.push(character.read().ascii_character as char);
+                        }
+                        
+                        unsafe {
+                            crate::vga_buffer::WRITER.force_unlock();
+                        }
+                        crate::shell::evaluate(&builder);
                     } else {
                         print!("{}", character)
                     }
