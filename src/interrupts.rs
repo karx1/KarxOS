@@ -96,7 +96,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                             let col = writer.column_position;
                             let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
                             
-                            if col != 0 {
+                            if col != 4 {
                                 crate::vga_buffer::move_cursor((col as u16) - 1, row as u16);
                                 writer.column_position -= 1;
                             }

@@ -157,7 +157,7 @@ pub fn backspace() {
     let row = BUFFER_HEIGHT - 1;
     let col = writer.column_position;
     let color_code = writer.color_code;
-    if col != 0 {
+    if col != 4 {
         writer.buffer.chars[row][col - 1].write(ScreenChar {
             ascii_character: b' ',
             color_code

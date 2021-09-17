@@ -2,11 +2,13 @@ use crate::println;
 use crate::print;
 
 pub fn evaluate(command: &str) {
-    let res = command.trim();
-    if res != "" {
-        println!();
-        println!();
-        println!("[ {:#?} ]", res);
-        print!(">>> ");
+    if let Some(stripped) = command.strip_prefix(">>> ") {
+        let res = stripped.trim();
+        if res != "" {
+            println!();
+            println!();
+            println!("[ {} ]", res);
+            print!(">>> ");
+        }
     }
 }
