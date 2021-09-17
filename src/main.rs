@@ -27,18 +27,24 @@ fn init() {
 
 #[no_mangle]
 pub extern "C" fn _start() {
-    println!("Hello, world");
+    use crate::vga_buffer::{change_color, Color};
 
     init();
+    print!("[ ");
+    change_color(Color::Green, Color::Black);
+    print!("OK");
+    change_color(Color::White, Color::Black);
+    println!(" ] Initialized GDT and interrupts");
 
-    x86_64::instructions::interrupts::int3();
+
+    print!("Welcome to ");
+    change_color(Color::Blue, Color::Black);
+    println!("KarxOS!");
+    change_color(Color::White, Color::Black);
 
     #[cfg(test)]
     test_main();
 
-    crate::vga_buffer::change_color(crate::vga_buffer::Color::Yellow, crate::vga_buffer::Color::Black);
-    println!("It did not crash!");
-    crate::vga_buffer::change_color(crate::vga_buffer::Color::White, crate::vga_buffer::Color::Black);
     loop {
         x86_64::instructions::hlt();
     }
