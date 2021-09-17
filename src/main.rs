@@ -36,7 +36,9 @@ pub extern "C" fn _start() {
     #[cfg(test)]
     test_main();
 
+    crate::vga_buffer::change_color(crate::vga_buffer::Color::Yellow, crate::vga_buffer::Color::Black);
     println!("It did not crash!");
+    crate::vga_buffer::change_color(crate::vga_buffer::Color::White, crate::vga_buffer::Color::Black);
     loop {
         x86_64::instructions::hlt();
     }

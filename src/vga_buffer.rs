@@ -199,3 +199,9 @@ pub fn move_cursor(x: u16, y: u16) {
     let mut cursor = CURSOR.lock();
     cursor.move_cursor(pos);
 }
+
+pub fn change_color(foreground: Color, background: Color) {
+   let mut writer = WRITER.lock();
+   let color = ColorCode::new(foreground, background);
+   writer.color_code = color;
+}
