@@ -1,7 +1,10 @@
 use crate::println;
 
 pub fn evaluate(command: &str) {
-    println!();
-    println!();
-    println!("[ {} ]", command.trim());
+    let res = command.trim();
+    if res != "" {
+        println!();
+        println!();
+        println!("[ {:#?} ]", res);
+    }
 }
