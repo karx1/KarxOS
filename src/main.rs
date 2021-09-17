@@ -11,6 +11,7 @@
 mod vga_buffer;
 mod interrupts;
 mod gdt;
+mod shell;
 use core::panic::PanicInfo;
 
 
