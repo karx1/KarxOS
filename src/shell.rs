@@ -51,6 +51,7 @@ fn info(_arguments: &[&str]) {
 }
 
 fn echo(arguments: &[&str]) {
+    // Join the arguments back into an ArrayString
     let mut new: ArrayString<80> = ArrayString::new();
     for arg in &arguments[1..] {
         new.push_str(arg);
@@ -64,6 +65,8 @@ fn shutdown(_arguments: &[&str]) {
     use x86_64::instructions::port::Port;
 
     println!("KarxOS shutting down!");
+    // QEMU shutdown hack
+    // TODO: acpi shutdown
     let mut shutdown_port: Port<u16> = Port::new(0x604);
     unsafe {
         shutdown_port.write(0x2000);

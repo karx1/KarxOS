@@ -43,12 +43,13 @@ pub struct ScreenChar {
     pub(crate) color_code: ColorCode
 }
 
+// This is characters, not pixels
 pub(crate) const BUFFER_HEIGHT: usize = 25;
 pub(crate) const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 pub struct Buffer {
-    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT]
+    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT] // Use Volatile for futureproofing reads/writes
 }
 
 pub struct Writer {
@@ -63,19 +64,17 @@ impl Writer {
         match byte {
             b'\n' => self.new_line(),
             byte => {
-                if self.column_position >= BUFFER_WIDTH {
-                    self.new_line();
+                if self.column_position < BUFFER_WIDTH {
+                    let row = BUFFER_HEIGHT - 1;
+                    let col = self.column_position;
+
+                    let color_code = self.color_code;
+                    self.buffer.chars[row][col].write(ScreenChar {
+                        ascii_character: byte,
+                        color_code
+                    });
+                    self.column_position += 1;
                 }
-
-                let row = BUFFER_HEIGHT - 1;
-                let col = self.column_position;
-
-                let color_code = self.color_code;
-                self.buffer.chars[row][col].write(ScreenChar {
-                    ascii_character: byte,
-                    color_code
-                });
-                self.column_position += 1;
             }
         }
     }
@@ -83,6 +82,7 @@ impl Writer {
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
+                // Only write printable ASCII characters
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
                 _ => self.write_byte(0xfe)
 
@@ -91,6 +91,7 @@ impl Writer {
     }
     
     fn new_line(&mut self) {
+        // Move all the rows up
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
                 let character = self.buffer.chars[row][col].read();
@@ -98,6 +99,7 @@ impl Writer {
             }
         }
 
+        // Clear top row
         self.clear_row(BUFFER_HEIGHT - 1);
         self.column_position = 0;
     }
@@ -146,6 +148,7 @@ pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     use x86_64::instructions::interrupts;
 
+    // Turn off interrupts to avoid a deadlock
     interrupts::without_interrupts(|| {
         WRITER.lock().write_fmt(args).unwrap();
     }); 
@@ -157,6 +160,7 @@ pub fn backspace() {
     let row = BUFFER_HEIGHT - 1;
     let col = writer.column_position;
     let color_code = writer.color_code;
+    // Barrier for prompt
     if col != 4 {
         writer.buffer.chars[row][col - 1].write(ScreenChar {
             ascii_character: b' ',

@@ -54,7 +54,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
     }
 
     let mut keyboard = KEYBOARD.lock();
-    let mut port = Port::new(0x60);
+    let mut port = Port::new(0x60); // PS/2 Keyboard Address
 
     let scancode: u8 = unsafe { port.read() };
     if let Ok(Some(key_event)) = keyboard.add_byte(scancode) {
@@ -69,11 +69,13 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                         use arrayvec::ArrayString;
                         let writer = crate::vga_buffer::WRITER.lock();
                         
+                        // Gather all chars in the current row into one ArrayString
                         let mut builder = ArrayString::<80>::new();
                         for character in &writer.buffer.chars[crate::vga_buffer::BUFFER_HEIGHT - 1] {
                             builder.push(character.read().ascii_character as char);
                         }
                         
+                        // We can be sure that we have the writer lock so we can safely call this method
                         unsafe {
                             crate::vga_buffer::WRITER.force_unlock();
                         }
@@ -90,12 +92,12 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                 },
                 DecodedKey::RawKey(key) => {
                     match key {
-                        // TODO
                         KeyCode::ArrowLeft => {
                             let mut writer = crate::vga_buffer::WRITER.lock();
                             let col = writer.column_position;
                             let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
                             
+                            // Barrier for the prompt
                             if col != 4 {
                                 crate::vga_buffer::move_cursor((col as u16) - 1, row as u16);
                                 writer.column_position -= 1;
@@ -106,10 +108,11 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                             let col = writer.column_position;
                             let row = crate::vga_buffer::BUFFER_HEIGHT - 1;
 
+                            // We don't need a barrier here because if the cursor reaches the end of the line then the VGA buffer stops it automatically
                             crate::vga_buffer::move_cursor((col as u16) + 1, row as u16);
                             writer.column_position += 1;
                         },
-                        _ => {}                        
+                        _ => {} // Ignore all other special keys                       
                     }
                 }, 
             }

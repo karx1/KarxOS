@@ -50,6 +50,7 @@ pub extern "C" fn _start() {
     test_main();
 
     loop {
+        // Halt CPU so that usage isn't 100% all the time
         x86_64::instructions::hlt();
     }
 }
