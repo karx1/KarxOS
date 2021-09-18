@@ -13,6 +13,7 @@ pub fn evaluate(command: &str) {
                 "help" => help,
                 "info" => info,
                 "echo" => echo,
+                "shutdown" => shutdown,
                 _ => default 
             };
             selected(&parts[..]);
@@ -31,6 +32,7 @@ fn help(_arguments: &[&str]) {
     println!("[help] This message");
     println!("[info] Info about KarxOS");
     println!("[echo <arguments>] Echoes whatever arguments you pass in");
+    println!("[shutdown] Shuts off the system (QEMU only)");
     change_color(Color::White, Color::Black);
 }
 
@@ -54,4 +56,14 @@ fn echo(arguments: &[&str]) {
     }
 
     println!("{}", new);
+}
+
+fn shutdown(_arguments: &[&str]) {
+    use x86_64::instructions::port::Port;
+
+    println!("KarxOS shutting down!");
+    let mut shutdown_port: Port<u16> = Port::new(0x604);
+    unsafe {
+        shutdown_port.write(0x2000);
+    }
 }
