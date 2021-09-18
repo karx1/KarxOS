@@ -1,5 +1,6 @@
 use crate::println;
 use crate::print;
+use crate::vga_buffer::ScreenChar;
 use crate::vga_buffer::{change_color, Color};
 use arrayvec::{ArrayVec, ArrayString};
 
@@ -14,6 +15,7 @@ pub fn evaluate(command: &str) {
                 "info" => info,
                 "echo" => echo,
                 "shutdown" => shutdown,
+                "clear" => clear,
                 _ => default 
             };
             selected(&parts[..]);
@@ -65,5 +67,20 @@ fn shutdown(_arguments: &[&str]) {
     let mut shutdown_port: Port<u16> = Port::new(0x604);
     unsafe {
         shutdown_port.write(0x2000);
+    }
+}
+
+fn clear(_arguments: &[&str]) {
+    let mut writer = crate::vga_buffer::WRITER.lock();
+    
+    for row in 0..crate::vga_buffer::BUFFER_HEIGHT {
+        for col in 0..crate::vga_buffer::BUFFER_WIDTH {
+            let blank = ScreenChar {
+                ascii_character: b' ',
+                color_code: crate::vga_buffer::ColorCode::new(crate::vga_buffer::Color::White, crate::vga_buffer::Color::Black)
+            };
+
+            writer.buffer.chars[row][col].write(blank);
+        }
     }
 }

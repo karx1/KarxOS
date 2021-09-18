@@ -28,10 +28,10 @@ pub enum Color {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
-struct ColorCode(u8);
+pub(crate) struct ColorCode(u8);
 
 impl ColorCode {
-    fn new(foreground: Color, background: Color) -> ColorCode {
+    pub fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
@@ -40,7 +40,7 @@ impl ColorCode {
 #[repr(C)]
 pub struct ScreenChar {
     pub ascii_character: u8,
-    color_code: ColorCode
+    pub(crate) color_code: ColorCode
 }
 
 pub(crate) const BUFFER_HEIGHT: usize = 25;
