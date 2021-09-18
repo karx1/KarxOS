@@ -1,7 +1,7 @@
-use volatile::Volatile;
 use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
+use volatile::Volatile;
 use x86_64::instructions::port::Port;
 
 #[allow(dead_code)]
@@ -23,7 +23,7 @@ pub enum Color {
     LightRed = 12,
     Pink = 13,
     Yellow = 14,
-    White = 15
+    White = 15,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,7 +40,7 @@ impl ColorCode {
 #[repr(C)]
 pub struct ScreenChar {
     pub ascii_character: u8,
-    pub(crate) color_code: ColorCode
+    pub(crate) color_code: ColorCode,
 }
 
 // This is characters, not pixels
@@ -49,15 +49,14 @@ pub(crate) const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 pub struct Buffer {
-    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT] // Use Volatile for futureproofing reads/writes
+    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT], // Use Volatile for futureproofing reads/writes
 }
 
 pub struct Writer {
     pub column_position: usize,
     color_code: ColorCode,
-    pub buffer: &'static mut Buffer
+    pub buffer: &'static mut Buffer,
 }
-
 
 impl Writer {
     pub fn write_byte(&mut self, byte: u8) {
@@ -71,7 +70,7 @@ impl Writer {
                     let color_code = self.color_code;
                     self.buffer.chars[row][col].write(ScreenChar {
                         ascii_character: byte,
-                        color_code
+                        color_code,
                     });
                     self.column_position += 1;
                 }
@@ -84,12 +83,11 @@ impl Writer {
             match byte {
                 // Only write printable ASCII characters
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
-                _ => self.write_byte(0xfe)
-
+                _ => self.write_byte(0xfe),
             }
         }
     }
-    
+
     fn new_line(&mut self) {
         // Move all the rows up
         for row in 1..BUFFER_HEIGHT {
@@ -131,7 +129,6 @@ lazy_static! {
     });
 }
 
-
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
@@ -151,9 +148,8 @@ pub fn _print(args: fmt::Arguments) {
     // Turn off interrupts to avoid a deadlock
     interrupts::without_interrupts(|| {
         WRITER.lock().write_fmt(args).unwrap();
-    }); 
-}   
-
+    });
+}
 
 pub fn backspace() {
     let mut writer = WRITER.lock();
@@ -164,12 +160,11 @@ pub fn backspace() {
     if col != 4 {
         writer.buffer.chars[row][col - 1].write(ScreenChar {
             ascii_character: b' ',
-            color_code
+            color_code,
         });
         writer.column_position -= 1;
     }
 }
-
 
 pub struct Cursor {
     port_low: Port<u8>,
@@ -205,7 +200,7 @@ pub fn move_cursor(x: u16, y: u16) {
 }
 
 pub fn change_color(foreground: Color, background: Color) {
-   let mut writer = WRITER.lock();
-   let color = ColorCode::new(foreground, background);
-   writer.color_code = color;
+    let mut writer = WRITER.lock();
+    let color = ColorCode::new(foreground, background);
+    writer.color_code = color;
 }
