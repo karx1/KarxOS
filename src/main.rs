@@ -29,7 +29,6 @@ fn init() {
 #[no_mangle]
 pub extern "C" fn _start(boot_info: &'static BootInfo) {
     use crate::vga_buffer::{change_color, Color};
-    use x86_64::{VirtAddr, structures::paging::Translate};
 
     init();
     print!("[ ");
@@ -37,26 +36,6 @@ pub extern "C" fn _start(boot_info: &'static BootInfo) {
     print!("OK");
     change_color(Color::White, Color::Black);
     println!(" ] Initialized GDT and interrupts");
-
-    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
-    let mapper = unsafe { memory::init(phys_mem_offset) };
-
-    let addresses = [
-        // the identity-mapped vga buffer page
-        0xb8000,
-        // some code page
-        0x201008,
-        // some stack page
-        0x0100_0020_1a10,
-        // virtual address mapped to physical address 0
-        boot_info.physical_memory_offset,
-    ];
-
-    for &address in &addresses {
-        let virt = VirtAddr::new(address);
-        let phys = mapper.translate_addr(virt);
-        println!("{:?} -> {:?}", virt, phys);        
-    }
 
     print!("Welcome to ");
     change_color(Color::Blue, Color::Black);
