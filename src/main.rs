@@ -5,20 +5,29 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 #![feature(abi_x86_interrupt)]
+#![feature(alloc_error_handler)]
 
 mod gdt;
 mod interrupts;
 mod shell;
 mod vga_buffer;
 mod memory;
+mod allocator;
 
 use core::panic::PanicInfo;
 use bootloader::BootInfo;
+
+extern crate alloc;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
+}
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
+    panic!("allocation error: {:?}", layout)
 }
 
 fn init() {
