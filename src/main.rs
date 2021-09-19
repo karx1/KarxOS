@@ -11,6 +11,7 @@ mod interrupts;
 mod shell;
 mod vga_buffer;
 use core::panic::PanicInfo;
+use bootloader::BootInfo;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -24,7 +25,7 @@ fn init() {
 }
 
 #[no_mangle]
-pub extern "C" fn _start() {
+pub extern "C" fn _start(boot_info: &'static BootInfo) {
     use crate::vga_buffer::{change_color, Color};
 
     init();
