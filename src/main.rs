@@ -38,6 +38,8 @@ fn init() {
 #[no_mangle]
 pub extern "C" fn _start(boot_info: &'static BootInfo) {
     use crate::vga_buffer::{change_color, Color};
+    use memory::BootInfoFrameAllocator;
+    use x86_64::VirtAddr;
 
     init();
     print!("[ ");
@@ -46,6 +48,25 @@ pub extern "C" fn _start(boot_info: &'static BootInfo) {
     change_color(Color::White, Color::Black);
     println!(" ] Initialized GDT and interrupts");
 
+    let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
+    let mut mapper = unsafe { memory::init(phys_mem_offset) };
+    let mut frame_allocator = unsafe {
+        BootInfoFrameAllocator::init(&boot_info.memory_map)
+    };
+    print!("[ ");
+    change_color(Color::Green, Color::Black);
+    print!("OK");
+    change_color(Color::White, Color::Black);
+    println!(" ] Initialized Mapper and Frame allocator");
+
+    allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed");
+    print!("[ ");
+    change_color(Color::Green, Color::Black);
+    print!("OK");
+    change_color(Color::White, Color::Black);
+    println!(" ] Initialized heap");
+
+    println!();
     print!("Welcome to ");
     change_color(Color::Blue, Color::Black);
     println!("KarxOS!");
