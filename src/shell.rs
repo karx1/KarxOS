@@ -2,8 +2,8 @@ use crate::print;
 use crate::println;
 use crate::vga_buffer::ScreenChar;
 use crate::vga_buffer::{change_color, Color};
-use alloc::{vec::Vec, string::String};
 use alloc::vec;
+use alloc::{string::String, vec::Vec};
 
 pub fn evaluate(command: &str) {
     if let Some(stripped) = command.strip_prefix(">>> ") {
@@ -48,19 +48,16 @@ fn compute_edit_distance(a: &str, b: &str) -> usize {
     for i in 1..len_b {
         cur[i] = i;
     }
-    
+
     for (i, ca) in a.chars().enumerate() {
         pre = cur[0];
-        cur[0] = i+1;
+        cur[0] = i + 1;
         for (j, cb) in b.chars().enumerate() {
             tmp = cur[j + 1];
             cur[j + 1] = core::cmp::min(
                 tmp + 1,
-                core::cmp::min(
-                    cur[j] + 1,
-                    pre + if ca == cb { 0 } else { 1 }
-                    )
-                );
+                core::cmp::min(cur[j] + 1, pre + if ca == cb { 0 } else { 1 }),
+            );
             pre = tmp;
         }
     }
@@ -68,7 +65,7 @@ fn compute_edit_distance(a: &str, b: &str) -> usize {
     cur[len_b - 1]
 }
 
-fn default(arguments:&[&str]) {
+fn default(arguments: &[&str]) {
     let mut distances: Vec<(&str, usize)> = Vec::new();
     let curr = arguments[0];
     for &command in &["help", "info", "echo", "shutdown", "clear"] {

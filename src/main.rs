@@ -7,15 +7,15 @@
 #![feature(abi_x86_interrupt)]
 #![feature(alloc_error_handler)]
 
+mod allocator;
 mod gdt;
 mod interrupts;
+mod memory;
 mod shell;
 mod vga_buffer;
-mod memory;
-mod allocator;
 
-use core::panic::PanicInfo;
 use bootloader::BootInfo;
+use core::panic::PanicInfo;
 
 extern crate alloc;
 
@@ -50,9 +50,7 @@ pub extern "C" fn _start(boot_info: &'static BootInfo) {
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe {
-        BootInfoFrameAllocator::init(&boot_info.memory_map)
-    };
+    let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
     print!("[ ");
     change_color(Color::Green, Color::Black);
     print!("OK");
