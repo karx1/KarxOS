@@ -3,6 +3,7 @@ use crate::println;
 use crate::vga_buffer::ScreenChar;
 use crate::vga_buffer::{change_color, Color};
 use alloc::{vec::Vec, string::String};
+use alloc::vec;
 
 pub fn evaluate(command: &str) {
     if let Some(stripped) = command.strip_prefix(">>> ") {
@@ -24,8 +25,60 @@ pub fn evaluate(command: &str) {
     }
 }
 
-fn default(_arguments: &[&str]) {
-    println!("Error: unknown command.");
+fn compute_edit_distance(a: &str, b: &str) -> usize {
+    let len_a = a.chars().count();
+    let len_b = b.chars().count();
+
+    if len_a < len_b {
+        return compute_edit_distance(b, a);
+    }
+
+    if len_a == 0 {
+        return len_b;
+    } else if len_b == 0 {
+        return len_a;
+    }
+
+    let len_b = len_b + 1;
+
+    let mut pre;
+    let mut tmp;
+    let mut cur = vec![0; len_b];
+
+    for i in 1..len_b {
+        cur[i] = i;
+    }
+    
+    for (i, ca) in a.chars().enumerate() {
+        pre = cur[0];
+        cur[0] = i+1;
+        for (j, cb) in b.chars().enumerate() {
+            tmp = cur[j + 1];
+            cur[j + 1] = core::cmp::min(
+                tmp + 1,
+                core::cmp::min(
+                    cur[j] + 1,
+                    pre + if ca == cb { 0 } else { 1 }
+                    )
+                );
+            pre = tmp;
+        }
+    }
+
+    cur[len_b - 1]
+}
+
+fn default(arguments:&[&str]) {
+    let mut distances: Vec<(&str, usize)> = Vec::new();
+    let curr = arguments[0];
+    for &command in &["help", "info", "echo", "shutdown", "clear"] {
+        let distance = compute_edit_distance(curr, command);
+        distances.push((command, distance));
+    }
+
+    distances.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+    println!("Error: command {} not found.", curr);
+    println!("Did you mean: {}", distances[0].0);
 }
 
 fn help(_arguments: &[&str]) {
@@ -35,6 +88,7 @@ fn help(_arguments: &[&str]) {
     println!("[info] Info about KarxOS");
     println!("[echo <arguments>] Echoes whatever arguments you pass in");
     println!("[shutdown] Shuts off the system (QEMU only)");
+    println!("[clear] Clears the screen");
     change_color(Color::White, Color::Black);
 }
 
