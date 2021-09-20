@@ -72,11 +72,11 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                     } else if character == '\u{9}' {
                         print!("    ");
                     } else if character == '\n' {
-                        use arrayvec::ArrayString;
+                        use alloc::string::String;
                         let writer = crate::vga_buffer::WRITER.lock();
 
                         // Gather all chars in the current row into one ArrayString
-                        let mut builder = ArrayString::<80>::new();
+                        let mut builder = String::new();
                         for character in &writer.buffer.chars[crate::vga_buffer::BUFFER_HEIGHT - 1]
                         {
                             builder.push(character.read().ascii_character as char);

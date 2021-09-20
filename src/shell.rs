@@ -2,14 +2,14 @@ use crate::print;
 use crate::println;
 use crate::vga_buffer::ScreenChar;
 use crate::vga_buffer::{change_color, Color};
-use arrayvec::{ArrayString, ArrayVec};
+use alloc::{vec::Vec, string::String};
 
 pub fn evaluate(command: &str) {
     if let Some(stripped) = command.strip_prefix(">>> ") {
         let res = stripped.trim();
         if res != "" {
             println!();
-            let parts: ArrayVec<&str, 80> = res.split(" ").collect();
+            let parts: Vec<&str> = res.split(" ").collect();
             let selected = match parts[0] {
                 "help" => help,
                 "info" => info,
@@ -52,7 +52,7 @@ fn info(_arguments: &[&str]) {
 
 fn echo(arguments: &[&str]) {
     // Join the arguments back into an ArrayString
-    let mut new: ArrayString<80> = ArrayString::new();
+    let mut new = String::new();
     for arg in &arguments[1..] {
         new.push_str(arg);
         new.push(' ');
