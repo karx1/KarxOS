@@ -17,6 +17,7 @@ pub fn evaluate(command: &str) {
                 "echo" => echo,
                 "shutdown" => shutdown,
                 "clear" => clear,
+                "uptime" => uptime,
                 _ => default,
             };
             selected(&parts[..]);
@@ -68,7 +69,7 @@ fn compute_edit_distance(a: &str, b: &str) -> usize {
 fn default(arguments: &[&str]) {
     let mut distances: Vec<(&str, usize)> = Vec::new();
     let curr = arguments[0];
-    for &command in &["help", "info", "echo", "shutdown", "clear"] {
+    for &command in &["help", "info", "echo", "shutdown", "clear", "uptime"] {
         let distance = compute_edit_distance(curr, command);
         distances.push((command, distance));
     }
@@ -81,11 +82,12 @@ fn default(arguments: &[&str]) {
 fn help(_arguments: &[&str]) {
     change_color(Color::LightBlue, Color::Black);
     print!("KarxShell help menu\n\n");
+    println!("[clear] Clears the screen");
+    println!("[echo <arguments>] Echoes whatever arguments you pass in");
     println!("[help] This message");
     println!("[info] Info about KarxOS");
-    println!("[echo <arguments>] Echoes whatever arguments you pass in");
     println!("[shutdown] Shuts off the system (QEMU only)");
-    println!("[clear] Clears the screen");
+    println!("[uptime] Get the system uptime");
     change_color(Color::White, Color::Black);
 }
 
@@ -140,4 +142,10 @@ fn clear(_arguments: &[&str]) {
             writer.buffer.chars[row][col].write(blank);
         }
     }
+}
+
+fn uptime(_arguments: &[&str]) {
+    use crate::clock::uptime;
+
+    println!("Uptime: {:.2} seconds", uptime());
 }

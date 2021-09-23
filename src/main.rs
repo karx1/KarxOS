@@ -8,6 +8,8 @@
 #![feature(alloc_error_handler)]
 
 mod allocator;
+mod ata;
+mod clock;
 mod gdt;
 mod interrupts;
 mod memory;
@@ -35,34 +37,38 @@ fn init() {
     interrupts::init();
 }
 
+macro_rules! status {
+    ($n:expr) => {
+        print!("[ ");
+        change_color(Color::Green, Color::Black);
+        print!("OK");
+        change_color(Color::White, Color::Black);
+        println!(" ] {}", $n);
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn _start(boot_info: &'static BootInfo) {
-    use crate::vga_buffer::{change_color, Color};
     use memory::BootInfoFrameAllocator;
     use x86_64::VirtAddr;
+    use crate::vga_buffer::{change_color, Color}; // For status! macro
 
     init();
-    print!("[ ");
-    change_color(Color::Green, Color::Black);
-    print!("OK");
-    change_color(Color::White, Color::Black);
-    println!(" ] Initialized GDT and interrupts");
+    status!("Initialized GDT and Interrupts");
+
+    clock::init();
+    status!("Initialized system clock");
 
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { memory::init(phys_mem_offset) };
     let mut frame_allocator = unsafe { BootInfoFrameAllocator::init(&boot_info.memory_map) };
-    print!("[ ");
-    change_color(Color::Green, Color::Black);
-    print!("OK");
-    change_color(Color::White, Color::Black);
-    println!(" ] Initialized Mapper and Frame allocator");
+    status!("Initialized Mapper and Frame allocator");
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("Heap initialization failed");
-    print!("[ ");
-    change_color(Color::Green, Color::Black);
-    print!("OK");
-    change_color(Color::White, Color::Black);
-    println!(" ] Initialized heap");
+    status!("Initialized heap");
+
+    // Must be initialized AFTER the heap!
+    ata::init();
 
     println!();
     print!("Welcome to ");
