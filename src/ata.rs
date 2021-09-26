@@ -4,6 +4,8 @@ use core::hint::spin_loop;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
+use bit_field::BitField;
+use crate::println;
 
 // Commands to send to the drives
 #[repr(u16)]
@@ -72,16 +74,174 @@ impl Bus {
 
         }
     }
+
+    fn reset(&mut self) {
+        use crate::clock::nanowait;
+        unsafe {
+            self.control_register.write(4);
+            nanowait(5);
+            self.control_register.write(0);
+            nanowait(2000);
+        }
+    }
+
+    fn wait(&mut self) {
+        for _ in 0..4 {
+            unsafe {
+                self.alternate_status_register.read();
+            }
+        }
+    }
+    fn select_drive(&mut self, drive: u8) {
+        let drive_id = 0xA0 | (drive << 4);
+        unsafe {
+            self.drive_register.write(drive_id);
+        }
+    }
+
+    fn write_command(&mut self, cmd: Command) {
+        unsafe {
+            self.command_register.write(cmd as u8);
+        }
+    }
+
+    fn status(&mut self) -> u8 {
+        unsafe {
+            self.status_register.read()
+        }
+    }
+
+    fn lba1(&mut self) -> u8 {
+        unsafe {
+            self.lba1_register.read()
+        }
+    }
+
+    fn lba2(&mut self) -> u8 {
+        unsafe {
+            self.lba2_register.read()
+        }
+    }
+
+    fn read_data(&mut self) -> u16 {
+        unsafe { self.data_register.read() }
+    }
+
+    fn busy_loop(&mut self) {
+        self.wait();
+        let start = crate::clock::uptime();
+        while self.is_busy() {
+            if crate::clock::uptime() - start > 1.0 {
+                return self.reset();
+            }
+
+            spin_loop();
+        } 
+    }
+
+    fn is_busy(&mut self) -> bool {
+        self.status().get_bit(Status::BSY as usize)
+    }
+
+    fn is_error(&mut self) -> bool {
+        self.status().get_bit(Status::ERR as usize)
+    }
+
+    fn is_ready(&mut self) -> bool {
+        self.status().get_bit(Status::RDY as usize)
+    }
+
+    pub fn identify_drive(&mut self, drive: u8) -> Option<[u16; 256]> {
+        self.reset();
+        self.wait();
+        self.select_drive(drive);
+        unsafe {
+            self.sector_count_register.write(0);
+            self.lba0_register.write(0);
+            self.lba1_register.write(0);
+            self.lba2_register.write(0);
+        }
+
+        self.write_command(Command::Identify);
+
+       if self.status() == 0 {
+           println!("status 0");
+            return None;
+       } 
+
+       self.busy_loop();
+
+       if self.lba1() != 0 || self.lba2() != 0 {
+           println!("lba thingies");
+           return None;
+       }
+
+       for i in 0.. {
+           if i == 256 {
+               println!("i 256");
+               self.reset();
+               return None;
+           }
+           if self.is_error() {
+               println!("Is error");
+               return None;
+           }
+           if self.is_ready() {
+               println!("ready");
+               break;
+           }
+       }
+
+       let mut res = [0; 256];
+       for i in 0..256 {
+           res[i] = self.read_data();
+       }
+
+       Some(res)
+    }
 }
+
 
 
 lazy_static! {
-    pub static ref BUSES: Mutex<Vec<Bus>> = Mutex::new(Vec::new());
+    pub static ref BUS: Mutex<Bus> = Mutex::new(Bus::new(0, 0x170, 0x376, 15));
 }
 
-pub fn init() {
-    let mut buses = BUSES.lock();
-    buses.push(Bus::new(0, 0x1f0, 0x3f6, 14));
-    buses.push(Bus::new(1, 0x170, 0x376, 15));
+fn disk_size(sectors: u32) -> (u32, String) {
+    let bytes = sectors * 512;
+    if bytes >> 20 < 1000 {
+        (bytes >> 20, String::from("MB"))
+    } else {
+        (bytes >> 30, String::from("GB"))
+    }
+}
+
+pub fn info() -> Vec<(u8, String, String, u32, String)> {
+    let mut bus = BUS.lock();
+    let mut res = Vec::new();
+    for drive in 0..2 {
+        if let Some(buf) = bus.identify_drive(drive) {
+            let mut serial = String::new();
+            for i in 10..20 {
+                for &b in &buf[i].to_be_bytes() {
+                    serial.push(b as char);
+                }
+            }
+            serial = serial.trim().into();
+            let mut model = String::new();
+            for i in 27..47 {
+                for &b in &buf[i].to_be_bytes() {
+                    model.push(b as char);
+                }
+            }
+            model = model.trim().into();
+            let sectors = (buf[61] as u32) << 16 | (buf[60] as u32);
+            let (size, unit) = disk_size(sectors);
+            res.push((drive, model, serial, size, unit));
+        } else {
+            println!("No drive found!");
+        }
+    }
+    res
 }
 

@@ -17,6 +17,7 @@ mod shell;
 mod vga_buffer;
 
 use bootloader::BootInfo;
+use bootloader::entry_point;
 use core::panic::PanicInfo;
 
 extern crate alloc;
@@ -35,6 +36,10 @@ fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {
 fn init() {
     gdt::init_gdt();
     interrupts::init();
+    unsafe {
+        interrupts::PICS.lock().initialize();
+    }
+    x86_64::instructions::interrupts::enable();
 }
 
 macro_rules! status {
@@ -47,8 +52,9 @@ macro_rules! status {
     }
 }
 
-#[no_mangle]
-pub extern "C" fn _start(boot_info: &'static BootInfo) {
+entry_point!(main);
+
+fn main(boot_info: &'static BootInfo) -> ! {
     use memory::BootInfoFrameAllocator;
     use x86_64::VirtAddr;
     use crate::vga_buffer::{change_color, Color}; // For status! macro
@@ -68,7 +74,8 @@ pub extern "C" fn _start(boot_info: &'static BootInfo) {
     status!("Initialized heap");
 
     // Must be initialized AFTER the heap!
-    ata::init();
+    println!("{:#?}", ata::info());
+    println!("{:#?}", ata::info());
 
     println!();
     print!("Welcome to ");

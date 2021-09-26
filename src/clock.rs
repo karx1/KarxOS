@@ -1,4 +1,5 @@
 use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use core::hint::spin_loop;
 use x86_64::instructions::port::Port;
 
 static CLOCKS_PER_NANOSECOND: AtomicU64 = AtomicU64::new(0);
@@ -43,6 +44,14 @@ pub fn sleep(seconds: f64) {
     let start = uptime();
     while uptime() - start < seconds {
         x86_64::instructions::interrupts::enable_and_hlt();
+    }
+}
+
+pub fn nanowait(nanoseconds: u64) {
+    let start = rdtsc();
+    let delta = nanoseconds * CLOCKS_PER_NANOSECOND.load(Ordering::Relaxed);
+    while rdtsc() - start < delta {
+       spin_loop(); 
     }
 }
 
