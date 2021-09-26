@@ -1,11 +1,11 @@
 // ATA Driver!
+use crate::println;
 use alloc::{string::String, vec::Vec};
+use bit_field::BitField;
 use core::hint::spin_loop;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use x86_64::instructions::port::{Port, PortReadOnly, PortWriteOnly};
-use bit_field::BitField;
-use crate::println;
 
 // Commands to send to the drives
 #[repr(u16)]
@@ -47,15 +47,15 @@ pub struct Bus {
 
     alternate_status_register: PortReadOnly<u8>,
     control_register: PortWriteOnly<u8>,
-    drive_blockless_register: PortReadOnly<u8>
+    drive_blockless_register: PortReadOnly<u8>,
 }
-
 
 #[allow(dead_code)]
 impl Bus {
     pub fn new(id: u8, io_base: u16, ctrl_base: u16, irq: u8) -> Self {
         Bus {
-            id, irq,
+            id,
+            irq,
 
             data_register: Port::new(io_base),
             error_register: PortReadOnly::new(io_base + 1),
@@ -71,7 +71,6 @@ impl Bus {
             alternate_status_register: PortReadOnly::new(ctrl_base),
             control_register: PortWriteOnly::new(ctrl_base),
             drive_blockless_register: PortReadOnly::new(ctrl_base + 1),
-
         }
     }
 
@@ -106,21 +105,15 @@ impl Bus {
     }
 
     fn status(&mut self) -> u8 {
-        unsafe {
-            self.status_register.read()
-        }
+        unsafe { self.status_register.read() }
     }
 
     fn lba1(&mut self) -> u8 {
-        unsafe {
-            self.lba1_register.read()
-        }
+        unsafe { self.lba1_register.read() }
     }
 
     fn lba2(&mut self) -> u8 {
-        unsafe {
-            self.lba2_register.read()
-        }
+        unsafe { self.lba2_register.read() }
     }
 
     fn read_data(&mut self) -> u16 {
@@ -136,7 +129,7 @@ impl Bus {
             }
 
             spin_loop();
-        } 
+        }
     }
 
     fn is_busy(&mut self) -> bool {
@@ -164,44 +157,42 @@ impl Bus {
 
         self.write_command(Command::Identify);
 
-       if self.status() == 0 {
-           println!("status 0");
+        if self.status() == 0 {
+            println!("status 0");
             return None;
-       } 
+        }
 
-       self.busy_loop();
+        self.busy_loop();
 
-       if self.lba1() != 0 || self.lba2() != 0 {
-           println!("lba thingies");
-           return None;
-       }
+        if self.lba1() != 0 || self.lba2() != 0 {
+            println!("lba thingies");
+            return None;
+        }
 
-       for i in 0.. {
-           if i == 256 {
-               println!("i 256");
-               self.reset();
-               return None;
-           }
-           if self.is_error() {
-               println!("Is error");
-               return None;
-           }
-           if self.is_ready() {
-               println!("ready");
-               break;
-           }
-       }
+        for i in 0.. {
+            if i == 256 {
+                println!("i 256");
+                self.reset();
+                return None;
+            }
+            if self.is_error() {
+                println!("Is error");
+                return None;
+            }
+            if self.is_ready() {
+                println!("ready");
+                break;
+            }
+        }
 
-       let mut res = [0; 256];
-       for i in 0..256 {
-           res[i] = self.read_data();
-       }
+        let mut res = [0; 256];
+        for i in 0..256 {
+            res[i] = self.read_data();
+        }
 
-       Some(res)
+        Some(res)
     }
 }
-
-
 
 lazy_static! {
     pub static ref BUS: Mutex<Bus> = Mutex::new(Bus::new(0, 0x170, 0x376, 15));
@@ -244,4 +235,3 @@ pub fn info() -> Vec<(u8, String, String, u32, String)> {
     }
     res
 }
-

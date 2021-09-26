@@ -43,7 +43,10 @@ extern "x86-interrupt" fn page_fault_handler(
     error_code: x86_64::structures::idt::PageFaultErrorCode,
 ) {
     println!("EXCEPTION : PAGE FAULT");
-    println!("Accessed Address: {:?}", x86_64::registers::control::Cr2::read());
+    println!(
+        "Accessed Address: {:?}",
+        x86_64::registers::control::Cr2::read()
+    );
     println!("Error Code: {:?}", error_code);
     println!("{:#?}", stack_frame);
     x86_64::instructions::interrupts::enable_and_hlt();
