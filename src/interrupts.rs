@@ -18,6 +18,9 @@ lazy_static! {
         idt.page_fault.set_handler_fn(page_fault_handler);
         idt[InterruptIndex::Timer.as_usize()].set_handler_fn(timer_interrupt_handler);
         idt[InterruptIndex::Keyboard.as_usize()].set_handler_fn(keyboard_interrupt_handler);
+        idt.stack_segment_fault.set_handler_fn(stack_segment_fault_handler);
+        idt.segment_not_present.set_handler_fn(segment_not_present_handler);
+        idt.general_protection_fault.set_handler_fn(general_protection_fault_handler);
         idt
     };
 }
@@ -36,8 +39,10 @@ extern "x86-interrupt" fn double_fault_handler(
     stack_frame: InterruptStackFrame,
     _error_code: u64,
 ) -> ! {
+    println!("{:#?}", x86_64::registers::control::Cr0::read());
     panic!("EXCEPTION : DOUBLE FAULT\n{:#?}", stack_frame);
 }
+
 extern "x86-interrupt" fn page_fault_handler(
     stack_frame: InterruptStackFrame,
     error_code: x86_64::structures::idt::PageFaultErrorCode,
@@ -142,6 +147,18 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
         PICS.lock()
             .notify_end_of_interrupt(InterruptIndex::Keyboard.as_u8());
     }
+}
+
+extern "x86-interrupt" fn general_protection_fault_handler(stack_frame: InterruptStackFrame, _error_code: u64) {
+        panic!("EXCEPTION: GENERAL PROTECTION FAULT\n{:#?}", stack_frame);
+}
+
+extern "x86-interrupt" fn stack_segment_fault_handler(stack_frame: InterruptStackFrame, _error_code: u64) {
+        panic!("EXCEPTION: STACK SEGMENT FAULT\n{:#?}", stack_frame);
+}
+
+extern "x86-interrupt" fn segment_not_present_handler(stack_frame: InterruptStackFrame, _error_code: u64) {
+        panic!("EXCEPTION: SEGMENT NOT PRESENT\n{:#?}", stack_frame);
 }
 
 pub const PIC_1_OFFSET: u8 = 32;

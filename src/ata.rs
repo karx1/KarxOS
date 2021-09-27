@@ -204,7 +204,7 @@ impl Bus {
 
 
 lazy_static! {
-    pub static ref BUS: Mutex<Bus> = Mutex::new(Bus::new(0, 0x170, 0x376, 15));
+    pub static ref BUS: Mutex<Bus> = Mutex::new(Bus::new(0, 0x1F0, 0x3F6, 14));
 }
 
 fn disk_size(sectors: u32) -> (u32, String) {
@@ -217,6 +217,10 @@ fn disk_size(sectors: u32) -> (u32, String) {
 }
 
 pub fn info() -> Vec<(u8, String, String, u32, String)> {
+    use x86_64::registers::control::{Cr0Flags, Cr0};
+    let mut flags = Cr0::read();
+    flags.set(Cr0Flags::WRITE_PROTECT, false);
+    unsafe {Cr0::write(flags)};
     let mut bus = BUS.lock();
     let mut res = Vec::new();
     for drive in 0..2 {
