@@ -208,10 +208,10 @@ fn disk_size(sectors: u32) -> (u32, String) {
 }
 
 pub fn info() -> Vec<(u8, String, String, u32, String)> {
-    use x86_64::registers::control::{Cr0Flags, Cr0};
+    use x86_64::registers::control::{Cr0, Cr0Flags};
     let mut flags = Cr0::read();
     flags.set(Cr0Flags::WRITE_PROTECT, false);
-    unsafe {Cr0::write(flags)};
+    unsafe { Cr0::write(flags) };
     let mut bus = BUS.lock();
     let mut res = Vec::new();
     for drive in 0..2 {
