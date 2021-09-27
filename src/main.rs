@@ -16,8 +16,8 @@ mod memory;
 mod shell;
 mod vga_buffer;
 
-use bootloader::BootInfo;
 use bootloader::entry_point;
+use bootloader::BootInfo;
 use core::panic::PanicInfo;
 
 extern crate alloc;
@@ -49,15 +49,15 @@ macro_rules! status {
         print!("OK");
         change_color(Color::White, Color::Black);
         println!(" ] {}", $n);
-    }
+    };
 }
 
 entry_point!(main);
 
 fn main(boot_info: &'static BootInfo) -> ! {
+    use crate::vga_buffer::{change_color, Color};
     use memory::BootInfoFrameAllocator;
-    use x86_64::VirtAddr;
-    use crate::vga_buffer::{change_color, Color}; // For status! macro
+    use x86_64::VirtAddr; // For status! macro
 
     init();
     status!("Initialized GDT and Interrupts");
